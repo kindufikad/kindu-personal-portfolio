@@ -1,0 +1,41 @@
+[
+  {
+    "model": "portfolio.project",
+    "pk": 1,
+    "fields": {
+      "title": "Instructor Performance Evaluation System",
+      "description": "A web platform for evaluating instructor performance at Mekdela Amba University.",
+      "technologies": "React, Python, Django, PostgreSQL",
+      "github_link": "https://github.com/kindufikad/ipes",
+      "live_link": "http://ipes-1.onrender.com/",
+      "image": null,
+      "image_url": ""
+    }
+  },
+  {
+    "model": "portfolio.project",
+    "pk": 2,
+    "fields": {
+      "title": "Mekdela Amba University FAQ Chatbot",
+      "description": "An interactive AI chatbot for answering university student inquiries regarding admissions, courses, and campus life.",
+      "technologies": "React, Python, AI/NLP",
+      "github_link": "https://github.com/kindufikad/mau-chatbot",
+      "live_link": "https://mau-chatbot.onrender.com",
+      "image": null,
+      "image_url": ""
+    }
+  },
+  {
+    "model": "portfolio.project",
+    "pk": 3,
+    "fields": {
+      "title": "Medical Clinic Simulation",
+      "description": "An interactive medical clinic simulation software built with Python and PyOpenGL featuring multi-threaded patient queuing logic, dynamic inventory tracking, and voice synthesis.",
+      "technologies": "Python, PyOpenGL, PIL, Pyttsx3, Multi-threading",
+      "github_link": "https://github.com/kindufikad/medical-clinic-simulation",
+      "live_link": "",
+      "image": null,
+      "image_url": ""
+    }
+  }
+]
