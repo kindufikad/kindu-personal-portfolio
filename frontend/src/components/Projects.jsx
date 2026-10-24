@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../use-language.js'
 
-const PROJECTS_API_URL = 'http://127.0.0.1:8000/api/projects/'
+// ⚠️ የ Render API ሊንክህ (HTTPS) እዚህ ተስተካከሏል!
+const PROJECTS_API_URL = 'https://kindu-personal-portfolio.onrender.com/api/projects/'
 
 function getTechnologies(value) {
   if (Array.isArray(value)) {
@@ -91,7 +92,7 @@ function ProjectCard({ project, index }) {
         </p>
 
         {technologies.length > 0 && (
-            <ul className="mt-5 flex flex-wrap gap-2" aria-label={t('projects.technologies')}>
+          <ul className="mt-5 flex flex-wrap gap-2" aria-label={t('projects.technologies')}>
             {technologies.map((technology) => (
               <li
                 key={technology}
