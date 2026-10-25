@@ -99,12 +99,20 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
 
       <div className="portfolio-hero__inner relative">
         <div className="portfolio-hero__copy">
-          <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-emerald-800/15 bg-white/75 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-xl dark:border-[#d3ff69]/20 dark:bg-slate-900/60 dark:text-white/80">
-            <span className="inline-flex size-2.5 animate-pulse rounded-full bg-emerald-500" aria-hidden="true" />
-            <span>🟢 Available for Freelance & Remote Work</span>
-            <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline text-slate-600 dark:text-slate-300">🕒 Addis Ababa, ET {localTime}</span>
-          </p>
+          <div className="mb-5 flex max-w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-emerald-500/30 bg-white/90 px-4 py-2 text-xs font-medium text-slate-700 shadow-md backdrop-blur-md dark:border-emerald-500/20 dark:bg-slate-900/90 dark:text-slate-100 sm:flex-row sm:justify-start sm:gap-2 sm:rounded-full sm:text-sm">
+            <div className="inline-flex items-center gap-2 text-center sm:text-left">
+              <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              </span>
+              <span>Available for Freelance & Remote Work</span>
+            </div>
+
+            <div className="inline-flex items-center justify-center gap-1.5 text-center text-slate-600 dark:text-slate-300 sm:justify-start">
+              <span aria-hidden="true">🕒</span>
+              <span>Addis Ababa, ET {localTime}</span>
+            </div>
+          </div>
 
           <p className="portfolio-hero__eyebrow">{t('hero.eyebrow')}</p>
           <h1>{t('hero.welcome')} {displayName}{t('hero.welcomeSuffix')}</h1>
