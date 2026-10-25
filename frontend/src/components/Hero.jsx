@@ -25,7 +25,10 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
   const hasDefaultRole = profile.bio === defaultProfile.bio || profile.bio === 'Full Stack Developer & AI Engineer'
   const [roleIndex, setRoleIndex] = useState(0)
   const [localTime, setLocalTime] = useState('')
-  const [showPortfolioPreview, setShowPortfolioPreview] = useState(false)
+  const [isPortfolioOpen, setIsPortfolioOpen] = useState(false)
+  const emailAddress = profile.email || 'kindufikad075@gmail.com'
+  const resumeFileName = 'Kindu_Fikad_Resume.pdf'
+  const resumeFileUrl = '/resume.pdf'
 
   useEffect(() => {
     const updateTime = () => {
@@ -54,18 +57,18 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
   }, [hasDefaultRole])
 
   useEffect(() => {
-    if (!isResumeOpen && !showPortfolioPreview) return undefined
+    if (!isResumeOpen && !isPortfolioOpen) return undefined
 
     function handleEscape(event) {
       if (event.key === 'Escape') {
         if (isResumeOpen) onCloseResume()
-        if (showPortfolioPreview) setShowPortfolioPreview(false)
+        if (isPortfolioOpen) setIsPortfolioOpen(false)
       }
     }
 
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isResumeOpen, onCloseResume, showPortfolioPreview])
+  }, [isResumeOpen, onCloseResume, isPortfolioOpen])
 
   const handlePortfolioAction = (event) => {
     if (event) event.preventDefault()
@@ -74,7 +77,24 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
       projectSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    setShowPortfolioPreview(true)
+    setIsPortfolioOpen(true)
+  }
+
+  const handleViewProjectsGrid = () => {
+    setIsPortfolioOpen(false)
+    const projectsSection = document.getElementById('projects')
+    if (projectsSection) {
+      projectsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  const handleDownloadResume = () => {
+    const link = document.createElement('a')
+    link.href = '/resume.pdf'
+    link.download = 'Kindu_Fikad_Resume.pdf'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const handleResumeAction = () => {
@@ -83,12 +103,28 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
       return
     }
 
-    const resumeLink = document.createElement('a')
-    resumeLink.href = '/resume.pdf'
-    resumeLink.download = 'Kindu-Fikad-Resume.pdf'
-    document.body.appendChild(resumeLink)
-    resumeLink.click()
-    document.body.removeChild(resumeLink)
+    handleDownloadResume()
+  }
+
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(emailAddress)
+      alert('Email copied to clipboard.')
+    } catch {
+      const tempInput = document.createElement('input')
+      tempInput.value = emailAddress
+      document.body.appendChild(tempInput)
+      tempInput.select()
+      document.execCommand('copy')
+      document.body.removeChild(tempInput)
+      alert('Email copied to clipboard.')
+    }
+  }
+
+  const handleContactRecruiter = () => {
+    const subject = encodeURIComponent('Recruitment Opportunity')
+    const body = encodeURIComponent(`Hello Kindu,\n\nI would like to discuss a professional opportunity with you.\n\nBest regards,\n`)
+    window.location.href = `mailto:${emailAddress}?subject=${subject}&body=${body}`
   }
 
   return (
@@ -188,11 +224,11 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
         </div>
       </div>
 
-      {showPortfolioPreview && (
+      {isPortfolioOpen && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
           onClick={(event) => {
-            if (event.target === event.currentTarget) setShowPortfolioPreview(false)
+            if (event.target === event.currentTarget) setIsPortfolioOpen(false)
           }}
         >
           <section
@@ -210,7 +246,7 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
                 type="button"
                 aria-label="Close projects preview"
                 className="grid size-9 place-items-center rounded-full bg-slate-900/5 text-lg text-slate-600 hover:bg-slate-900/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
-                onClick={() => setShowPortfolioPreview(false)}
+                onClick={() => setIsPortfolioOpen(false)}
               >
                 ×
               </button>
@@ -232,10 +268,7 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                onClick={() => {
-                  setShowPortfolioPreview(false)
-                  document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                }}
+                onClick={handleViewProjectsGrid}
                 className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:scale-105 dark:bg-white dark:text-slate-950"
               >
                 View Projects Grid
@@ -247,7 +280,7 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
 
       {isResumeOpen && (
         <div
-          className="fixed inset-0 z-100 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           onClick={(event) => {
             if (event.target === event.currentTarget) onCloseResume()
           }}
@@ -256,7 +289,7 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="resume-preview-title"
-            className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#151916] sm:p-8"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#151916] sm:p-8"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -275,12 +308,28 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
             <p className="mt-1 text-sm font-semibold text-slate-600 dark:text-white/60">
               {hasDefaultRole ? t(roleKeys[roleIndex]) : profile.bio}
             </p>
-            <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-white/60">{t('about.paragraph2')}</p>
+            <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-white/60">
+              I&apos;m a Computer Science student building a strong foundation in algorithms, systems, and the principles behind reliable software. I enjoy solving complex problems and turning ideas into practical full-stack products. My work brings together React interfaces, Django and Python services, database design, software engineering, and thoughtful AI integration.
+            </p>
+            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-200">
+              <span className="font-semibold">Email:</span> kindufikad075@gmail.com
+            </div>
 
             <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
               <div className="flex items-center justify-between gap-3">
                 <span className="font-semibold">Resume Preview</span>
-                <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 dark:bg-emerald-500/10 dark:text-[#d3ff69]">PDF</span>
+                <button
+                  type="button"
+                  onClick={handleDownloadResume}
+                  className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 transition hover:scale-[1.02] dark:bg-emerald-500/10 dark:text-[#d3ff69]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v12" />
+                    <path d="m7 20 5 5 5-5" />
+                    <path d="M5 21h14" />
+                  </svg>
+                  Download PDF
+                </button>
               </div>
               <div className="mt-4 h-56 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900">
                 <div className="h-full rounded-lg border border-dashed border-slate-300 bg-white/60 p-4 dark:border-slate-700 dark:bg-slate-950/30">
@@ -300,13 +349,32 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <a
-                href="/resume.pdf"
-                download
-                className="inline-flex flex-1 items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:scale-105 dark:bg-white dark:text-slate-950"
+              <button
+                type="button"
+                onClick={handleDownloadResume}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:scale-105 dark:bg-white dark:text-slate-950"
               >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3v12" />
+                  <path d="m7 20 5 5 5-5" />
+                  <path d="M5 21h14" />
+                </svg>
                 Download PDF
-              </a>
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyEmail}
+                className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:scale-105 dark:border-white/10 dark:text-white/80"
+              >
+                Copy Email
+              </button>
+              <button
+                type="button"
+                onClick={handleContactRecruiter}
+                className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:scale-105 dark:border-white/10 dark:text-white/80"
+              >
+                Contact Me
+              </button>
               <button
                 type="button"
                 onClick={onCloseResume}
