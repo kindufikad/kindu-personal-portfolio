@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import emailjs from '@emailjs/browser'
+import { CheckCircle2 } from 'lucide-react'
 import { LuCheck, LuCopy, LuMail, LuMapPin, LuPhone } from 'react-icons/lu'
 import { useLanguage } from '../use-language.js'
 
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID ?? ''
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID ?? ''
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY ?? ''
 const CONTACT_EMAIL = 'kindufikad075@gmail.com'
 const emptyForm = { name: '', email: '', message: '' }
 
@@ -28,6 +29,12 @@ function Contact() {
     return () => window.clearTimeout(timeout)
   }, [copyStatus])
 
+  useEffect(() => {
+    if (EMAILJS_PUBLIC_KEY) {
+      emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY })
+    }
+  }, [])
+
   async function handleCopy(value, type) {
     try {
       await navigator.clipboard.writeText(value)
@@ -49,27 +56,47 @@ function Contact() {
     setToast(null)
 
     if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      console.warn(
+        'EmailJS configuration warning: missing VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, or VITE_EMAILJS_PUBLIC_KEY in .env',
+      )
       setToast({ type: 'error', message: t('contact.configurationMissing') })
       return
     }
 
+    const payload = {
+      from_name: formData.name.trim(),
+      from_email: formData.email.trim(),
+      message: formData.message.trim(),
+      to_name: 'Kindu Fikad',
+      to_email: CONTACT_EMAIL,
+    }
+
+    if (!payload.from_name || !payload.from_email || !payload.message) {
+      setToast({ type: 'error', message: 'Please complete all fields before sending.' })
+      return
+    }
+
     setIsSubmitting(true)
+
     try {
-      await emailjs.send(
+      const result = await emailjs.send(
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
+        payload,
         {
-          from_name: formData.name,
-          reply_to: formData.email,
-          message: formData.message,
-          to_email: CONTACT_EMAIL,
+          publicKey: EMAILJS_PUBLIC_KEY,
         },
-        { publicKey: EMAILJS_PUBLIC_KEY },
       )
+
+      console.log('EmailJS success:', result)
       setFormData(emptyForm)
       setToast({ type: 'success', message: t('contact.sent') })
-    } catch {
-      setToast({ type: 'error', message: t('contact.failed') })
+    } catch (error) {
+      console.error('EmailJS Error:', error)
+      setToast({
+        type: 'error',
+        message: 'The message could not be sent. Please try again in a moment.',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -79,13 +106,49 @@ function Contact() {
     <section id="contact" className="flex min-h-screen items-center border-t border-slate-900/10 dark:border-white/[0.07]">
       {toast && (
         <div
-          className={`contact-toast contact-toast--${toast.type}`}
+          className={`pointer-events-auto fixed right-4 top-4 z-50 w-[min(92vw,26rem)] rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-all duration-300 ease-out transform ${
+            toast.type === 'success'
+              ? 'border-emerald-500/30 bg-emerald-50/90 text-emerald-950 shadow-emerald-500/10 dark:bg-emerald-950/90 dark:text-emerald-50 translate-y-0 opacity-100'
+              : 'border-red-500/30 bg-red-50/90 text-red-950 dark:bg-red-950/90 dark:text-red-50 translate-y-0 opacity-100'
+          }`}
           role={toast.type === 'error' ? 'alert' : 'status'}
           aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
         >
-          <span aria-hidden="true">{toast.type === 'success' ? '✓' : '!'}</span>
-          <p>{toast.message}</p>
-          <button type="button" aria-label={t('settings.close')} onClick={() => setToast(null)}>×</button>
+          <div className="flex items-start gap-3">
+            <div
+              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${
+                toast.type === 'success'
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 shadow-[0_0_0_6px_rgba(16,185,129,0.12)] dark:text-emerald-300'
+                  : 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300'
+              }`}
+            >
+              {toast.type === 'success' ? (
+                <CheckCircle2 className="h-5 w-5 animate-pulse" aria-hidden="true" />
+              ) : (
+                <span aria-hidden="true" className="text-lg font-bold">!</span>
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold leading-5 text-slate-900 dark:text-white">
+                {toast.type === 'success' ? 'Message sent successfully!' : toast.message}
+              </p>
+              {toast.type === 'success' && (
+                <p className="mt-1 text-sm text-emerald-700/80 dark:text-emerald-200/80">
+                  I will get back to you soon!
+                </p>
+              )}
+            </div>
+
+            <button
+              type="button"
+              aria-label={t('settings.close')}
+              onClick={() => setToast(null)}
+              className="ml-2 rounded-full p-1 text-slate-500 transition hover:bg-slate-200/70 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
       <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-12 sm:px-6 sm:py-16 md:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20 lg:py-20">

@@ -24,6 +24,26 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
   const displayName = profile.fullName === defaultProfile.fullName ? t('brand.name') : profile.fullName
   const hasDefaultRole = profile.bio === defaultProfile.bio || profile.bio === 'Full Stack Developer & AI Engineer'
   const [roleIndex, setRoleIndex] = useState(0)
+  const [localTime, setLocalTime] = useState('')
+  const [showPortfolioPreview, setShowPortfolioPreview] = useState(false)
+
+  useEffect(() => {
+    const updateTime = () => {
+      const date = new Date()
+      const timeFormatter = new Intl.DateTimeFormat('en-ET', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'Africa/Addis_Ababa',
+      })
+      setLocalTime(timeFormatter.format(date))
+    }
+
+    updateTime()
+    const interval = window.setInterval(updateTime, 1000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (!hasDefaultRole || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
@@ -34,22 +54,58 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
   }, [hasDefaultRole])
 
   useEffect(() => {
-    if (!isResumeOpen) return undefined
+    if (!isResumeOpen && !showPortfolioPreview) return undefined
+
     function handleEscape(event) {
-      if (event.key === 'Escape') onCloseResume()
+      if (event.key === 'Escape') {
+        if (isResumeOpen) onCloseResume()
+        if (showPortfolioPreview) setShowPortfolioPreview(false)
+      }
     }
+
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isResumeOpen, onCloseResume])
+  }, [isResumeOpen, onCloseResume, showPortfolioPreview])
+
+  const handlePortfolioAction = (event) => {
+    if (event) event.preventDefault()
+    const projectSection = document.getElementById('projects')
+    if (projectSection) {
+      projectSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    setShowPortfolioPreview(true)
+  }
+
+  const handleResumeAction = () => {
+    if (typeof onOpenResume === 'function') {
+      onOpenResume()
+      return
+    }
+
+    const resumeLink = document.createElement('a')
+    resumeLink.href = '/resume.pdf'
+    resumeLink.download = 'Kindu-Fikad-Resume.pdf'
+    document.body.appendChild(resumeLink)
+    resumeLink.click()
+    document.body.removeChild(resumeLink)
+  }
 
   return (
-    <section id="hero" className="portfolio-hero">
-      <div className="portfolio-hero__inner">
+    <section id="hero" className="portfolio-hero relative overflow-hidden">
+      <div className="pointer-events-none absolute -top-14 left-1/4 h-96 w-96 rounded-full bg-purple-200/40 blur-3xl dark:bg-purple-900/20" aria-hidden="true" />
+      <div className="pointer-events-none absolute right-10 top-10 h-80 w-80 rounded-full bg-cyan-200/30 blur-3xl dark:bg-cyan-900/20" aria-hidden="true" />
+      <div className="pointer-events-none absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-200/25 blur-3xl dark:bg-emerald-900/15" aria-hidden="true" />
+
+      <div className="portfolio-hero__inner relative">
         <div className="portfolio-hero__copy">
-          <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-emerald-800/15 bg-white/65 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-[#d3ff69]/20 dark:bg-white/5 dark:text-white/75">
+          <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-emerald-800/15 bg-white/75 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-xl dark:border-[#d3ff69]/20 dark:bg-slate-900/60 dark:text-white/80">
             <span className="inline-flex size-2.5 animate-pulse rounded-full bg-emerald-500" aria-hidden="true" />
-            {t('hero.availability')}
+            <span>🟢 Available for Freelance & Remote Work</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline text-slate-600 dark:text-slate-300">🕒 Addis Ababa, ET {localTime}</span>
           </p>
+
           <p className="portfolio-hero__eyebrow">{t('hero.eyebrow')}</p>
           <h1>{t('hero.welcome')} {displayName}{t('hero.welcomeSuffix')}</h1>
           <p className="portfolio-hero__role">
@@ -57,12 +113,24 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
               {hasDefaultRole ? t(roleKeys[roleIndex]) : profile.bio}
             </span>
           </p>
+
           <div className="portfolio-hero__actions">
-            <a className="portfolio-button portfolio-button--primary" href="#projects">{t('hero.portfolio')} <span aria-hidden="true">↗</span></a>
-            <button className="portfolio-button portfolio-button--outline cursor-pointer" type="button" onClick={onOpenResume}>
+            <button
+              type="button"
+              onClick={handlePortfolioAction}
+              className="portfolio-button portfolio-button--primary hover:scale-105 transition-all duration-300"
+            >
+              {t('hero.portfolio')} <span aria-hidden="true">↗</span>
+            </button>
+            <button
+              className="portfolio-button portfolio-button--outline cursor-pointer hover:scale-105 transition-all duration-300"
+              type="button"
+              onClick={handleResumeAction}
+            >
               {t('hero.resume')}
             </button>
           </div>
+
           <div className="portfolio-socials" aria-label="Social links">
             {socialLinks.map((link) => (
               <a key={link.label} href={link.href} aria-label={link.label} target="_blank" rel="noreferrer">
@@ -70,6 +138,7 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
               </a>
             ))}
           </div>
+
           <div className="mt-7 grid max-w-xl grid-cols-3 gap-2.5 sm:gap-3">
             {[
               { value: '3+', label: t('hero.statProjects') },
@@ -110,6 +179,64 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
           </div>
         </div>
       </div>
+
+      {showPortfolioPreview && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setShowPortfolioPreview(false)
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="portfolio-preview-title"
+            className="w-full max-w-2xl rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#151916] sm:p-8"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-[#d3ff69]">Featured Work</p>
+                <h2 id="portfolio-preview-title" className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-white">Selected Projects</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Close projects preview"
+                className="grid size-9 place-items-center rounded-full bg-slate-900/5 text-lg text-slate-600 hover:bg-slate-900/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                onClick={() => setShowPortfolioPreview(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/60">
+                <div className="mb-3 h-32 rounded-xl bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-500" aria-hidden="true" />
+                <h3 className="font-semibold text-slate-900 dark:text-white">Full-stack Business Platform</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-white/60">React, Django, REST APIs, and admin dashboards for client-facing product workflows.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/60">
+                <div className="mb-3 h-32 rounded-xl bg-gradient-to-br from-violet-400 via-fuchsia-400 to-pink-500" aria-hidden="true" />
+                <h3 className="font-semibold text-slate-900 dark:text-white">AI Automation Experience</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-white/60">Python-based automation and intelligent product experiences with a strong UX focus.</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPortfolioPreview(false)
+                  document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+                className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:scale-105 dark:bg-white dark:text-slate-950"
+              >
+                View Projects Grid
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {isResumeOpen && (
         <div
           className="fixed inset-0 z-100 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
@@ -141,9 +268,44 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
               {hasDefaultRole ? t(roleKeys[roleIndex]) : profile.bio}
             </p>
             <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-white/60">{t('about.paragraph2')}</p>
-            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-900/10 pt-5 text-sm dark:border-white/10">
-              <a className="font-semibold text-emerald-800 hover:underline dark:text-[#d3ff69]" href="mailto:kindufikad075@gmail.com">kindufikad075@gmail.com</a>
-              <span className="text-slate-500 dark:text-white/50">{t('about.location')}</span>
+
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold">Resume Preview</span>
+                <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 dark:bg-emerald-500/10 dark:text-[#d3ff69]">PDF</span>
+              </div>
+              <div className="mt-4 h-56 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900">
+                <div className="h-full rounded-lg border border-dashed border-slate-300 bg-white/60 p-4 dark:border-slate-700 dark:bg-slate-950/30">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Professional Summary</p>
+                  <div className="mt-4 space-y-2">
+                    <div className="h-2.5 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                    <div className="h-2.5 w-full rounded bg-slate-200 dark:bg-slate-700" />
+                    <div className="h-2.5 w-5/6 rounded bg-slate-200 dark:bg-slate-700" />
+                  </div>
+                  <div className="mt-6 space-y-2">
+                    <div className="h-2.5 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
+                    <div className="h-2.5 w-5/6 rounded bg-slate-200 dark:bg-slate-700" />
+                    <div className="h-2.5 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href="/resume.pdf"
+                download
+                className="inline-flex flex-1 items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:scale-105 dark:bg-white dark:text-slate-950"
+              >
+                Download PDF
+              </a>
+              <button
+                type="button"
+                onClick={onCloseResume}
+                className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:scale-105 dark:border-white/10 dark:text-white/80"
+              >
+                Close
+              </button>
             </div>
           </section>
         </div>
