@@ -5,6 +5,7 @@ import Contact from './components/Contact.jsx'
 import Footer from './components/Footer.jsx'
 import Navbar from './components/Navbar.jsx'
 import Projects from './components/Projects.jsx'
+import Recognition from './components/Recognition.jsx'
 import { readStoredProfile } from './profile.js'
 import Skills from './components/Skills.jsx'
 
@@ -12,6 +13,8 @@ const routeByHash = {
   hero: 'home',
   top: 'home',
   projects: 'projects',
+  recognition: 'recognition',
+  credentials: 'recognition',
   services: 'services',
   skills: 'services',
   about: 'about',
@@ -40,7 +43,11 @@ function App() {
   }, [theme])
 
   useEffect(() => {
-    window.localStorage.setItem('portfolio-profile', JSON.stringify(profile))
+    try {
+      window.localStorage.setItem('portfolio-profile', JSON.stringify(profile))
+    } catch (error) {
+      console.error('Unable to save the profile in this browser.', error)
+    }
   }, [profile])
 
   useEffect(() => {
@@ -95,11 +102,13 @@ function App() {
               isResumeOpen={isResumeOpen}
               onCloseResume={() => setIsResumeOpen(false)}
               onOpenResume={openResume}
+              onNavigate={navigateTo}
             />
             <Footer profile={profile} />
           </>
         )}
         {activeView === 'projects' && <Projects />}
+        {activeView === 'recognition' && <Recognition />}
         {activeView === 'services' && <Skills />}
         {activeView === 'about' && <About />}
         {activeView === 'contact' && <Contact />}

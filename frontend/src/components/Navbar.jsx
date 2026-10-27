@@ -9,6 +9,7 @@ import SettingsModal from './SettingsModal.jsx'
 const navLinks = [
   { label: 'nav.home', href: '#hero', view: 'home' },
   { label: 'nav.projects', href: '#projects', view: 'projects' },
+  { label: 'nav.recognition', href: '#recognition', view: 'recognition' },
   { label: 'nav.services', href: '#services', view: 'services' },
   { label: 'nav.about', href: '#about', view: 'about' },
   { label: 'nav.contact', href: '#contact', view: 'contact' },

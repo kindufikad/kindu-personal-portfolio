@@ -14,7 +14,9 @@ export function readStoredProfile() {
       fullName: typeof savedProfile.fullName === 'string' ? savedProfile.fullName : defaultProfile.fullName,
       phoneNumber: typeof savedProfile.phoneNumber === 'string' ? savedProfile.phoneNumber : '',
       bio: typeof savedProfile.bio === 'string' ? savedProfile.bio : defaultProfile.bio,
-      picture: typeof savedProfile.picture === 'string' ? savedProfile.picture : '',
+      picture: typeof savedProfile.picture === 'string' && savedProfile.picture.startsWith('data:image/')
+        ? savedProfile.picture
+        : '',
     }
   } catch {
     return { ...defaultProfile }

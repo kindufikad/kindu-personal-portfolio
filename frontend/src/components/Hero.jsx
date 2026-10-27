@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import { useLanguage } from '../use-language.js'
 import { defaultProfile } from '../profile.js'
+import profileImage from '../assets/kkkk.jpg'
+import ResumeModal from './ResumeModal.jsx'
 
 const socialLinks = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/', icon: 'linkedin' },
@@ -19,16 +22,35 @@ function SocialIcon({ name }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.3 2h9.4A5.3 5.3 0 0 1 22 7.3v9.4a5.3 5.3 0 0 1-5.3 5.3H7.3A5.3 5.3 0 0 1 2 16.7V7.3A5.3 5.3 0 0 1 7.3 2Zm0 3A2.3 2.3 0 0 0 5 7.3v9.4A2.3 2.3 0 0 0 7.3 19h9.4a2.3 2.3 0 0 0 2.3-2.3V7.3A2.3 2.3 0 0 0 16.7 5H7.3Zm9.8 1.2a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7.4a4.6 4.6 0 1 1 0 9.2 4.6 4.6 0 0 1 0-9.2Zm0 3a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z" /></svg>
 }
 
-function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
+function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume, onNavigate }) {
   const { t } = useLanguage()
   const displayName = profile.fullName === defaultProfile.fullName ? t('brand.name') : profile.fullName
   const hasDefaultRole = profile.bio === defaultProfile.bio || profile.bio === 'Full Stack Developer & AI Engineer'
   const [roleIndex, setRoleIndex] = useState(0)
   const [localTime, setLocalTime] = useState('')
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false)
-  const emailAddress = profile.email || 'kindufikad075@gmail.com'
-  const resumeFileName = 'Kindu_Fikad_Resume.pdf'
-  const resumeFileUrl = '/resume.pdf'
+  const [isPortfolioClosing, setIsPortfolioClosing] = useState(false)
+  const portfolioCloseTimerRef = useRef(null)
+
+  const closePortfolio = useCallback((afterClose) => {
+    if (portfolioCloseTimerRef.current) return
+    setIsPortfolioClosing(true)
+    portfolioCloseTimerRef.current = window.setTimeout(() => {
+      portfolioCloseTimerRef.current = null
+      setIsPortfolioOpen(false)
+      setIsPortfolioClosing(false)
+      afterClose?.()
+    }, 180)
+  }, [])
+
+  function openPortfolio() {
+    if (portfolioCloseTimerRef.current) {
+      window.clearTimeout(portfolioCloseTimerRef.current)
+      portfolioCloseTimerRef.current = null
+    }
+    setIsPortfolioClosing(false)
+    setIsPortfolioOpen(true)
+  }
 
   useEffect(() => {
     const updateTime = () => {
@@ -57,18 +79,19 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
   }, [hasDefaultRole])
 
   useEffect(() => {
-    if (!isResumeOpen && !isPortfolioOpen) return undefined
+    if (!isPortfolioOpen) return undefined
 
     function handleEscape(event) {
-      if (event.key === 'Escape') {
-        if (isResumeOpen) onCloseResume()
-        if (isPortfolioOpen) setIsPortfolioOpen(false)
-      }
+      if (event.key === 'Escape') closePortfolio()
     }
 
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isResumeOpen, onCloseResume, isPortfolioOpen])
+  }, [closePortfolio, isPortfolioOpen])
+
+  useEffect(() => () => {
+    window.clearTimeout(portfolioCloseTimerRef.current)
+  }, [])
 
   const handlePortfolioAction = (event) => {
     if (event) event.preventDefault()
@@ -77,15 +100,11 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
       projectSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    setIsPortfolioOpen(true)
+    openPortfolio()
   }
 
   const handleViewProjectsGrid = () => {
-    setIsPortfolioOpen(false)
-    const projectsSection = document.getElementById('projects')
-    if (projectsSection) {
-      projectsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    closePortfolio(() => onNavigate?.('#projects'))
   }
 
   const handleDownloadResume = () => {
@@ -104,27 +123,6 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
     }
 
     handleDownloadResume()
-  }
-
-  const handleCopyEmail = async () => {
-    try {
-      await navigator.clipboard.writeText(emailAddress)
-      alert('Email copied to clipboard.')
-    } catch {
-      const tempInput = document.createElement('input')
-      tempInput.value = emailAddress
-      document.body.appendChild(tempInput)
-      tempInput.select()
-      document.execCommand('copy')
-      document.body.removeChild(tempInput)
-      alert('Email copied to clipboard.')
-    }
-  }
-
-  const handleContactRecruiter = () => {
-    const subject = encodeURIComponent('Recruitment Opportunity')
-    const body = encodeURIComponent(`Hello Kindu,\n\nI would like to discuss a professional opportunity with you.\n\nBest regards,\n`)
-    window.location.href = `mailto:${emailAddress}?subject=${subject}&body=${body}`
   }
 
   return (
@@ -217,7 +215,7 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
           </div>
           <div className="portfolio-portrait__image-wrap">
             <img
-              src={profile.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&q=85'}
+              src={profileImage}
               alt={profile.fullName}
             />
           </div>
@@ -226,16 +224,16 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
 
       {isPortfolioOpen && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+          className={`portfolio-preview-backdrop fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm ${isPortfolioClosing ? 'is-closing' : ''}`}
           onClick={(event) => {
-            if (event.target === event.currentTarget) setIsPortfolioOpen(false)
+            if (event.target === event.currentTarget) closePortfolio()
           }}
         >
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="portfolio-preview-title"
-            className="w-full max-w-2xl rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#151916] sm:p-8"
+            className={`portfolio-preview-panel max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#151916] sm:p-8 ${isPortfolioClosing ? 'is-closing' : ''}`}
           >
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -244,25 +242,34 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
               </div>
               <button
                 type="button"
-                aria-label="Close projects preview"
-                className="grid size-9 place-items-center rounded-full bg-slate-900/5 text-lg text-slate-600 hover:bg-slate-900/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
-                onClick={() => setIsPortfolioOpen(false)}
+                aria-label="Close Selected Projects"
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-slate-900/5 text-slate-600 transition hover:bg-slate-900/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                onClick={() => closePortfolio()}
               >
-                ×
+                <X size={18} aria-hidden="true" />
               </button>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/60">
+              <button
+                type="button"
+                onClick={handleViewProjectsGrid}
+                className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-700/30 hover:shadow-md focus-visible:outline-2 focus-visible:outline-emerald-700 dark:border-white/10 dark:bg-slate-900/60"
+              >
                 <div className="mb-3 h-32 rounded-xl bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-500" aria-hidden="true" />
                 <h3 className="font-semibold text-slate-900 dark:text-white">Full-stack Business Platform</h3>
                 <p className="mt-2 text-sm text-slate-600 dark:text-white/60">React, Django, REST APIs, and admin dashboards for client-facing product workflows.</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/60">
+              </button>
+              <button
+                  type="button"
+                  aria-label="View AI Automation Experience project"
+                  onClick={handleViewProjectsGrid}
+                  className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-700/30 hover:shadow-md focus-visible:outline-2 focus-visible:outline-emerald-700 dark:border-white/10 dark:bg-slate-900/60"
+                >
                 <div className="mb-3 h-32 rounded-xl bg-gradient-to-br from-violet-400 via-fuchsia-400 to-pink-500" aria-hidden="true" />
                 <h3 className="font-semibold text-slate-900 dark:text-white">AI Automation Experience</h3>
                 <p className="mt-2 text-sm text-slate-600 dark:text-white/60">Python-based automation and intelligent product experiences with a strong UX focus.</p>
-              </div>
+              </button>
             </div>
 
             <div className="mt-6 flex justify-end">
@@ -279,112 +286,7 @@ function Hero({ profile, isResumeOpen, onCloseResume, onOpenResume }) {
       )}
 
       {isResumeOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) onCloseResume()
-          }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="resume-preview-title"
-            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#151916] sm:p-8"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-[#d3ff69]">{t('hero.resumePreview')}</p>
-                <h2 id="resume-preview-title" className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-white">{displayName}</h2>
-              </div>
-              <button
-                type="button"
-                aria-label={t('settings.close')}
-                className="grid size-9 shrink-0 place-items-center rounded-full bg-slate-900/5 text-lg text-slate-600 hover:bg-slate-900/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
-                onClick={onCloseResume}
-              >
-                ×
-              </button>
-            </div>
-            <p className="mt-1 text-sm font-semibold text-slate-600 dark:text-white/60">
-              {hasDefaultRole ? t(roleKeys[roleIndex]) : profile.bio}
-            </p>
-            <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-white/60">
-              I&apos;m a Computer Science student building a strong foundation in algorithms, systems, and the principles behind reliable software. I enjoy solving complex problems and turning ideas into practical full-stack products. My work brings together React interfaces, Django and Python services, database design, software engineering, and thoughtful AI integration.
-            </p>
-            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-200">
-              <span className="font-semibold">Email:</span> kindufikad075@gmail.com
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-semibold">Resume Preview</span>
-                <button
-                  type="button"
-                  onClick={handleDownloadResume}
-                  className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 transition hover:scale-[1.02] dark:bg-emerald-500/10 dark:text-[#d3ff69]"
-                >
-                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 3v12" />
-                    <path d="m7 20 5 5 5-5" />
-                    <path d="M5 21h14" />
-                  </svg>
-                  Download PDF
-                </button>
-              </div>
-              <div className="mt-4 h-56 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900">
-                <div className="h-full rounded-lg border border-dashed border-slate-300 bg-white/60 p-4 dark:border-slate-700 dark:bg-slate-950/30">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Professional Summary</p>
-                  <div className="mt-4 space-y-2">
-                    <div className="h-2.5 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
-                    <div className="h-2.5 w-full rounded bg-slate-200 dark:bg-slate-700" />
-                    <div className="h-2.5 w-5/6 rounded bg-slate-200 dark:bg-slate-700" />
-                  </div>
-                  <div className="mt-6 space-y-2">
-                    <div className="h-2.5 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
-                    <div className="h-2.5 w-5/6 rounded bg-slate-200 dark:bg-slate-700" />
-                    <div className="h-2.5 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleDownloadResume}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:scale-105 dark:bg-white dark:text-slate-950"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 3v12" />
-                  <path d="m7 20 5 5 5-5" />
-                  <path d="M5 21h14" />
-                </svg>
-                Download PDF
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyEmail}
-                className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:scale-105 dark:border-white/10 dark:text-white/80"
-              >
-                Copy Email
-              </button>
-              <button
-                type="button"
-                onClick={handleContactRecruiter}
-                className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:scale-105 dark:border-white/10 dark:text-white/80"
-              >
-                Contact Me
-              </button>
-              <button
-                type="button"
-                onClick={onCloseResume}
-                className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:scale-105 dark:border-white/10 dark:text-white/80"
-              >
-                Close
-              </button>
-            </div>
-          </section>
-        </div>
+        <ResumeModal isOpen={isResumeOpen} profile={{ ...profile, fullName: displayName }} onClose={onCloseResume} />
       )}
     </section>
   )
